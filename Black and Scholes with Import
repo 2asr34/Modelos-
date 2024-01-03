@@ -1,0 +1,67 @@
+import numpy as np
+import pandas as pd
+from scipy.stats import norm
+
+class BS_formula:
+
+    def __init__(self, s0, k, r, sigma, T):
+        self.s0 = s0
+        self.k = k
+        self.r = r
+        self.sigma = sigma
+        self.T = T
+        self.d1 = (np.log(s0 / k) + (r + sigma ** 2 / 2) * T) / (sigma * np.sqrt(T))
+        self.d2 = ((np.log(s0 / k) + (r + sigma ** 2 / 2) * T) / (sigma * np.sqrt(T))) - sigma * np.sqrt(T)
+
+    def BS_price(self):
+        c = self.s0 * norm.cdf(self.d1) - self.k * np.exp(-self.r * self.T) * norm.cdf(self.d2)
+        p = self.k * np.exp(-self.r * self.T) * norm.cdf(-self.d2) - self.s0 * norm.cdf(-self.d1)
+        return c, p
+
+    def import_data_from_excel(self, input_file_path):
+        df = pd.read_excel(input_file_path)
+        self.input_data = df
+        self.calculate_d_values()
+
+    def calculate_d_values(self):
+        self.input_data['d1'] = (np.log(self.input_data['Stock Price'] / self.input_data['Strike Price']) +
+                                (self.input_data['Risk-Free Rate'] + self.input_data['Volatility'] ** 2 / 2) *
+                                self.input_data['Time to Maturity']) / (self.input_data['Volatility'] *
+                                                                      np.sqrt(self.input_data['Time to Maturity']))
+
+        self.input_data['d2'] = self.input_data['d1'] - self.input_data['Volatility'] * np.sqrt(
+            self.input_data['Time to Maturity'])
+
+    def calculate_option_prices(self):
+        self.input_data['Call Option Price'] = (self.input_data['Stock Price'] *
+                                                norm.cdf(self.input_data['d1']) -
+                                                self.input_data['Strike Price'] *
+                                                np.exp(-self.input_data['Risk-Free Rate'] *
+                                                       self.input_data['Time to Maturity']) *
+                                                norm.cdf(self.input_data['d2']))
+
+        self.input_data['Put Option Price'] = (self.input_data['Strike Price'] *
+                                               np.exp(-self.input_data['Risk-Free Rate'] *
+                                                      self.input_data['Time to Maturity']) *
+                                               norm.cdf(-self.input_data['d2']) -
+                                               self.input_data['Stock Price'] *
+                                               norm.cdf(-self.input_data['d1']))
+
+    def export_results_to_excel(self, output_file_path):
+        results = pd.concat([self.input_data[['Stock Price', 'Strike Price', 'Risk-Free Rate', 'Volatility']],
+                             self.input_data[['Call Option Price', 'Put Option Price']]], axis=1)
+        results.to_excel(output_file_path, index=False)
+
+# Example usage
+if __name__ == "__main__":
+    bs_model = BS_formula(s0=1, k=2, r=0.02, sigma=0.01, T=1)  # Initialize with dummy values
+
+    input_file_path = "C:\input_file.xlsx"
+    bs_model.import_data_from_excel(input_file_path)
+
+    bs_model.calculate_option_prices()
+
+    output_file_path = "C:\output_file.xlsx"
+    bs_model.export_results_to_excel(output_file_path)
+
+    print("Calculation and export completed successfully.")
