@@ -48,7 +48,7 @@ class BS_formula:
                                                norm.cdf(-self.input_data['d1']))
 
     def export_results_to_excel(self, output_file_path):
-        results = pd.concat([self.input_data[['Stock Price', 'Strike Price', 'Risk-Free Rate', 'Volatility']],
+        results = pd.concat([self.input_data[['Tranche','Stock Price', 'Strike Price', 'Risk-Free Rate', 'Volatility']],
                              self.input_data[['Call Option Price', 'Put Option Price']]], axis=1)
         results.to_excel(output_file_path, index=False)
 
